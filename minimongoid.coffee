@@ -44,6 +44,10 @@ class Minimongoid
   set: (field,value) ->
     @attributes[field] = value
 
+  insert: (attributes) ->
+    $.extend(@attributes, attributes)
+
+
   save: ->
     return false unless @isValid()
     @_saved_attributes = clone(@attributes)
