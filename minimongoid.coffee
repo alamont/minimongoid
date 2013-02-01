@@ -14,6 +14,7 @@ class Minimongoid
     for field, opts of @constructor.fields
       unless @attributes.hasOwnProperty field
         @attributes[field] = opts.default
+        @makeProperty field
 
   isPersisted: -> @id?
 
@@ -46,7 +47,16 @@ class Minimongoid
 
   insert: (attributes) ->
     $.extend(@attributes, attributes)
+    for field, value of attributes
+      @makeProperty field
 
+    this
+
+  makeProperty: (field) ->
+    Object.defineProperty this, field,
+            get: -> @get field
+            set: (value) ->
+              @attributes[field] = value
 
   save: ->
     return false unless @isValid()
