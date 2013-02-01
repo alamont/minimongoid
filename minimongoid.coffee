@@ -1,6 +1,8 @@
 class Minimongoid
   id: undefined
   attributes: {}
+  _saved_attributes: {}
+  @fields: {}
 
   constructor: (attributes = {}) ->
     if attributes._id
@@ -9,12 +11,35 @@ class Minimongoid
     else
       @attributes = attributes
 
+    for field, opts of @constructor.fields
+      if not @attributes.hasOwnProperty field
+        @attributes[field] = opts.default
+
   isPersisted: -> @id?
 
   isValid: -> true
 
+  hasChanged: ->
+    @_saved_attributes isnt @attributes
+
+  resetChanges: ->
+    @attributes = @_saved_attributes
+
+  was: (field) ->
+    if field
+      @_saved_attributes[field]
+    else
+      @_saved_attributes
+
+  get: (field) ->
+    @attributes[field]
+
+  set: (field,value) ->
+    @attributes[field] = value
+
   save: ->
     return false unless @isValid()
+    @_saved_attributes = @attributes
     
     attributes = @mongoize(@attributes)
     attributes['_type'] = @constructor._type if @constructor._type?
@@ -24,8 +49,7 @@ class Minimongoid
     else
       @id = @constructor._collection.insert attributes
     
-    this
-
+    
   update: (@attributes) ->
     @save()
 
@@ -76,3 +100,4 @@ class Minimongoid
 
   @destroyAll: (selector = {}) ->
     @_collection.remove(selector)
+
