@@ -56,7 +56,7 @@ class Minimongoid
     Object.defineProperty this, field,
             get: -> @get field
             set: (value) ->
-              @attributes[field] = value
+              @set(field,value)
 
   save: ->
     return false unless @isValid()
