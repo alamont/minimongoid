@@ -6,15 +6,17 @@ class Minimongoid
 
   constructor: (attributes = {}) ->
     if attributes._id
-      @attributes = @demongoize(attributes)
+      @attributes = attributes
       @id = attributes._id
-    else
+    else    
       @attributes = attributes
 
     for field, opts of @constructor.fields
       unless @attributes.hasOwnProperty field
         @attributes[field] = opts.default
-        @makeProperty field
+
+    for field, value of @attributes
+      @makeProperty field
 
   isPersisted: -> @id?
 
@@ -44,6 +46,7 @@ class Minimongoid
 
   set: (field,value) ->
     @attributes[field] = value
+    @makeProperty field
 
   insert: (attributes) ->
     $.extend(@attributes, attributes)
@@ -52,22 +55,28 @@ class Minimongoid
 
     this
 
+  # Add a field as a property. Note that if you assign a non-existing property
+  # this method will not be called and hence any assignment will not be reflected
+  # in the attributes.
   makeProperty: (field) ->
-    Object.defineProperty this, field,
-            get: -> @get field
-            set: (value) ->
-              @set(field,value)
+    if this[field] == undefined && field != "id"
+      Object.defineProperty this, field,
+              get: -> @get field
+              set: (value) ->
+                @set(field,value)
 
   save: ->
     return false unless @isValid()
     @_saved_attributes = clone(@attributes)
     
-    attributes = @mongoize(@attributes)
+    attributes = @attributes
     attributes['_type'] = @constructor._type if @constructor._type?
-    
+   
     if @isPersisted()
-      @constructor._collection.update @id, { $set: attributes }
-    else
+      @constructor._collection.update @id, { $set: @mongoize(attributes) }
+        # @constructor._collection.insert attributes
+    else #if attributes.id?
+      # attributes._id = attributes.id
       @id = @constructor._collection.insert attributes
     
     this
@@ -107,10 +116,15 @@ class Minimongoid
     @new(attributes).save()
 
   @where: (selector = {}, options = {}) ->
-    @_collection.find(selector, options)
+    @all(selector,options)
 
   @all: (selector = {}, options = {}) ->
-    @_collection.find(selector, options)
+    docs = []
+    for i, obj of @_collection.find(selector, options).fetch()
+      new_obj = @new(obj)
+      new_obj._saved_attributes = clone(new_obj.attributes)
+      docs.push(new_obj)
+    return docs
 
   @toArray: (selector = {}, options = {}) ->
     for attributes in @where(selector, options).fetch()
