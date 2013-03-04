@@ -3,6 +3,6 @@
   "description": "Mongoid inspired models.",
   "homepage": "https://github.com/alamont/minimongoid.git",
   "author": "Mike Bannister & Andres Lamont",
-  "version": "0.2.0",
+  "version": "0.2.5",
   "git": "https://github.com/alamont/minimongoid.git"
 }

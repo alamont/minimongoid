@@ -1,15 +1,13 @@
 class Minimongoid
-  id: undefined
+  id: undefined 
   attributes: {}
   _saved_attributes: undefined
   @fields: {}
 
   constructor: (attributes = {}) ->
-    if attributes._id
-      @attributes = attributes
+    @attributes = attributes
+    if attributes._id?
       @id = attributes._id
-    else    
-      @attributes = attributes
 
     for field, opts of @constructor.fields
       unless @attributes.hasOwnProperty field
@@ -75,10 +73,13 @@ class Minimongoid
     if @isPersisted()
       @constructor._collection.update @id, { $set: @mongoize(attributes) }
         # @constructor._collection.insert attributes
+    else if @attributes.id?
+      @attributes._id = @attributes.id
+      @id = @constructor._collection.insert attributes
     else #if attributes.id?
       # attributes._id = attributes.id
       @id = @constructor._collection.insert attributes
-    
+
     this
     
   update: (@attributes) ->
@@ -114,6 +115,14 @@ class Minimongoid
 
   @create: (attributes) ->
     @new(attributes).save()
+
+  @find: (selector = {}, options = {}) ->
+    @_collection.find(selector, options)
+
+  @findOne: (selector = {}, options = {}) ->
+    obj = @new(@_collection.findOne(selector, options))
+    obj._saved_attributes = clone(obj.attributes)
+    obj
 
   @where: (selector = {}, options = {}) ->
     @all(selector,options)
